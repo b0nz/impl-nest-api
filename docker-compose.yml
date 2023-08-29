@@ -1,0 +1,17 @@
+version: "3.8"
+services:
+  nest-api-db:
+    image: postgres:13
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_DB: nest-api
+    ports:
+      - 5432:5432
+    networks:
+      - nest-api-network
+
+networks: 
+  nest-api-network:
+    driver: bridge
