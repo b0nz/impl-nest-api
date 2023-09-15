@@ -18,6 +18,10 @@ model User {
   email    String    @unique
   name     String?
   password String?
+
+  bookmarks Bookmark[]
+
+  @@map("users")
 }
 model Bookmark {
   id      String    @id @default(cuid())
@@ -27,4 +31,9 @@ model Bookmark {
   title   String
   description String?
   url     String
+
+  userId  String
+  user    User      @relation(fields: [userId], references: [id])
+
+  @@map("bookmarks")
 }
