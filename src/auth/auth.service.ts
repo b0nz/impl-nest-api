@@ -1,11 +1,17 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
+import * as argon from 'argon2';
+import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthDto } from './dto';
-import * as argon from 'argon2';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable({})
 export class AuthService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private jwt: JwtService,
+    private config: ConfigService,
+  ) {}
 
   async signUp(dto: AuthDto) {
     const hash = await argon.hash(dto.password);
@@ -16,9 +22,8 @@ export class AuthService {
           password: hash,
         },
       });
-      delete user.password;
 
-      return user;
+      return this.signToken(user.id, user.email);
     } catch (error) {
       if (error.code === 'P2002') {
         throw new ForbiddenException('Email already exists');
@@ -42,8 +47,25 @@ export class AuthService {
       throw new ForbiddenException('Invalid credentials');
     }
 
-    delete user.password;
+    return this.signToken(user.id, user.email);
+  }
 
-    return user;
+  async signToken(
+    userId: string,
+    email: string,
+  ): Promise<{ access_token: string }> {
+    const payload = {
+      sub: userId,
+      email,
+    };
+
+    const token = await this.jwt.signAsync(payload, {
+      secret: this.config.get('JWT_SECRET'),
+      expiresIn: '1h',
+    });
+
+    return {
+      access_token: token,
+    };
   }
 }
